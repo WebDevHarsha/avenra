@@ -26,7 +26,7 @@ export interface PitchDeck {
 export interface CompanyKPIs {
   companyName: string;
   sector: string;
-  stage: string;
+  stage?: string;
   fundingRound?: string;
   askAmount?: number;
   valuation?: number;
@@ -34,8 +34,10 @@ export interface CompanyKPIs {
   growthRate?: number;
   teamSize?: number;
   marketSize?: number;
-  businessModel: string;
-  keyMetrics: Record<string, any>;
+  customerCount?: number;
+  burnRate?: number;
+  businessModel?: string;
+  keyMetrics?: Record<string, any>;
 }
 
 export interface AIAnalysis {

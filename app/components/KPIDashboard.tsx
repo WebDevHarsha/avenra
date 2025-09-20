@@ -69,6 +69,18 @@ export default function KPIDashboard({ kpis, className = '' }: KPIDashboardProps
       value: kpis.marketSize ? formatCurrency(kpis.marketSize) : 'N/A',
       icon: '🌍',
       color: 'bg-teal-50 border-teal-200'
+    },
+    {
+      label: 'Customer Count',
+      value: kpis.customerCount?.toLocaleString() || 'N/A',
+      icon: '👤',
+      color: 'bg-cyan-50 border-cyan-200'
+    },
+    {
+      label: 'Monthly Burn Rate',
+      value: kpis.burnRate ? formatCurrency(kpis.burnRate) : 'N/A',
+      icon: '🔥',
+      color: 'bg-rose-50 border-rose-200'
     }
   ];
 

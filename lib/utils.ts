@@ -86,61 +86,106 @@ export function debounce<T extends (...args: any[]) => any>(
   };
 }
 
-// Parse KPIs from extracted text using regex and keywords
-export function parseKPIs(text: string): Partial<import('../types').CompanyKPIs> {
+// Parse KPIs using Gemini AI with grounding/web search
+export async function parseKPIs(text: string): Promise<Partial<import('../types').CompanyKPIs>> {
+  try {
+    console.log('Using Gemini AI with grounding to extract KPIs...');
+    
+    if (!process.env.GEMINI_API_KEY) {
+      throw new Error('Gemini API key not configured');
+    }
+
+    const { GoogleGenerativeAI } = await import('@google/generative-ai');
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    
+    // Use Gemini model with grounding capabilities
+    const model = genAI.getGenerativeModel({ 
+      model: "gemini-1.5-flash",
+      tools: [{
+        googleSearchRetrieval: {}
+      }]
+    });
+
+    const prompt = `
+Analyze this pitch deck content and extract key company KPIs. Use web search to verify and enhance the information with current market data and company information if the company exists.
+
+PITCH DECK CONTENT:
+${text}
+
+Please extract and research the following KPIs. Use web search to find additional information about the company if it exists:
+
+1. Company Name - exact name of the company
+2. Sector/Industry - specific industry or market segment
+3. Funding Round - current or target funding stage (Seed, Series A, B, etc.)
+4. Ask Amount - funding amount being sought (in USD)
+5. Revenue - current annual revenue (in USD)
+6. Growth Rate - revenue growth rate percentage
+7. Team Size - number of employees
+8. Market Size - Total Addressable Market (TAM) in USD
+9. Customer Count - number of customers/users
+10. Burn Rate - monthly cash burn (in USD)
+
+Return the response in this exact JSON format (use null for unavailable data):
+{
+  "companyName": "string or null",
+  "sector": "string or null", 
+  "fundingRound": "string or null",
+  "askAmount": number or null,
+  "revenue": number or null,
+  "growthRate": number or null,
+  "teamSize": number or null,
+  "marketSize": number or null,
+  "customerCount": number or null,
+  "burnRate": number or null
+}
+
+If you find the company online, incorporate current/verified information. Provide only the JSON response.
+`;
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const responseText = response.text();
+    
+    console.log('Gemini response for KPI extraction:', responseText);
+    
+    // Parse JSON response
+    try {
+      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const kpis = JSON.parse(jsonMatch[0]);
+        console.log('Extracted KPIs:', kpis);
+        return kpis;
+      }
+    } catch (parseError) {
+      console.error('Error parsing Gemini JSON response:', parseError);
+    }
+
+    // Fallback to basic parsing if AI fails
+    console.log('Falling back to basic parsing...');
+    return parseKPIsBasic(text);
+    
+  } catch (error) {
+    console.error('Error extracting KPIs with Gemini:', error);
+    // Fallback to basic parsing
+    return parseKPIsBasic(text);
+  }
+}
+
+// Fallback basic KPI parsing function
+function parseKPIsBasic(text: string): Partial<import('../types').CompanyKPIs> {
   const kpis: Partial<import('../types').CompanyKPIs> = {};
   
-  // Company name (usually in first few lines or after "Company:" etc.)
+  // Basic company name extraction
   const companyNameMatch = text.match(/(?:Company|Startup):\s*([^\n]+)/i) ||
-                          text.match(/^([A-Z][a-zA-Z\s]+)(?:\n|\s-)/m);
+                          text.match(/^([A-Z][a-zA-Z\s&]+)(?:\s(?:Inc|LLC|Corp|Ltd))?/m);
   if (companyNameMatch) {
     kpis.companyName = companyNameMatch[1].trim();
   }
 
-  // Sector/Industry
+  // Basic sector extraction
   const sectorMatch = text.match(/(?:Sector|Industry|Market):\s*([^\n]+)/i);
   if (sectorMatch) {
     kpis.sector = sectorMatch[1].trim();
-  }
-
-  // Funding round and amount
-  const fundingMatch = text.match(/(?:Series [A-Z]|Seed|Pre-seed|Angel)/i);
-  if (fundingMatch) {
-    kpis.fundingRound = fundingMatch[0];
-  }
-
-  // Ask amount (looking for $ followed by numbers)
-  const askMatch = text.match(/(?:asking|raising|seeking)\s*\$?([\d.,]+)\s*(?:million|M|k|thousand)?/i);
-  if (askMatch) {
-    let amount = parseFloat(askMatch[1].replace(/,/g, ''));
-    if (text.toLowerCase().includes('million') || text.toLowerCase().includes('M')) {
-      amount *= 1000000;
-    } else if (text.toLowerCase().includes('thousand') || text.toLowerCase().includes('k')) {
-      amount *= 1000;
-    }
-    kpis.askAmount = amount;
-  }
-
-  // Revenue
-  const revenueMatch = text.match(/revenue[:\s]*\$?([\d.,]+)\s*(?:million|M|k|thousand)?/i);
-  if (revenueMatch) {
-    let revenue = parseFloat(revenueMatch[1].replace(/,/g, ''));
-    if (text.toLowerCase().includes('million') || text.toLowerCase().includes('M')) {
-      revenue *= 1000000;
-    }
-    kpis.revenue = revenue;
-  }
-
-  // Growth rate
-  const growthMatch = text.match(/growth[:\s]*([\d.]+)%/i);
-  if (growthMatch) {
-    kpis.growthRate = parseFloat(growthMatch[1]);
-  }
-
-  // Team size
-  const teamMatch = text.match(/(?:team|employees)[:\s]*([\d]+)/i);
-  if (teamMatch) {
-    kpis.teamSize = parseInt(teamMatch[1]);
   }
 
   return kpis;

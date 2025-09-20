@@ -58,9 +58,9 @@ export default function PitchDeckAnalyzer({ onAnalysisComplete }: PitchDeckAnaly
 
       const extractedText = extractResponse.data?.text || '';
 
-      // Step 2: Parse KPIs from extracted text
-      setCurrentStep('Parsing company information...');
-      const kpis = parseKPIs(extractedText);
+      // Step 2: Parse KPIs from extracted text using Gemini AI with grounding
+      setCurrentStep('Parsing company information with AI...');
+      const kpis = await parseKPIs(extractedText);
 
       // Step 3: Fetch market data
       setCurrentStep('Fetching market data...');
