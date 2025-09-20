@@ -12,12 +12,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!process.env.GEMINI_API_KEY) {
-      return NextResponse.json(
-        { error: 'Gemini API key not configured' },
-        { status: 500 }
-      );
-    }
+    // if (!process.env.NEXT_PUBLIC_GEMINI_API_KEY) {
+    //   return NextResponse.json(
+    //     { error: 'Gemini API key not configured' },
+    //     { status: 500 }
+    //   );
+    // }
 
     // Create comprehensive analysis prompt
     const analysisPrompt = createAnalysisPrompt(companyData, marketData, extractedText);

@@ -5,7 +5,7 @@ import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from '../../lib/firebase';
 import FileUpload from './FileUpload';
 import LoadingSpinner from './LoadingSpinner';
-import { parseKPIs } from '../../lib/utils';
+// Removed parseKPIs import - now using API endpoint
 
 interface AnalysisResult {
   extractedText: string;
@@ -24,6 +24,53 @@ export default function PitchDeckAnalyzer({ onAnalysisComplete }: PitchDeckAnaly
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentStep, setCurrentStep] = useState<string>('');
   const [error, setError] = useState<string>('');
+
+  const extractKPIs = async (text: string) => {
+    try {
+      setCurrentStep('Extracting KPIs with Gemini AI...');
+      const response = await fetch('/api/kpis', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ extractedText: text }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to extract KPIs');
+      }
+      
+      const result = await response.json();
+      return result.success ? result.data : result;
+    } catch (error) {
+      console.error('KPI extraction error:', error);
+      // Fallback to basic parsing with all expected fields
+      return {
+        companyName: 'N/A',
+        sector: 'Technology', // Default sector for market data
+        fundingStage: 'N/A',
+        teamSize: null,
+        revenue: null,
+        customers: 'N/A',
+        marketSize: null,
+        competition: 'N/A',
+        businessModel: 'N/A',
+        keyMetrics: 'N/A',
+        fundingRequest: null,
+        useOfFunds: 'N/A',
+        traction: 'N/A',
+        technology: 'N/A',
+        geographicMarket: 'N/A',
+        // Additional fields for KPIDashboard compatibility
+        fundingRound: 'N/A',
+        askAmount: null,
+        valuation: null,
+        growthRate: null,
+        customerCount: null,
+        burnRate: null
+      };
+    }
+  };
 
   const handleFileSelect = (file: File) => {
     setSelectedFile(file);
@@ -60,7 +107,7 @@ export default function PitchDeckAnalyzer({ onAnalysisComplete }: PitchDeckAnaly
 
       // Step 2: Parse KPIs from extracted text using Gemini AI with grounding
       setCurrentStep('Parsing company information with AI...');
-      const kpis = await parseKPIs(extractedText);
+      const kpis = await extractKPIs(extractedText);
 
       // Step 3: Fetch market data
       setCurrentStep('Fetching market data...');

@@ -1,16 +1,27 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-if (!process.env.GEMINI_API_KEY) {
-  throw new Error('Missing GEMINI_API_KEY environment variable');
+if (!process.env.NEXT_PUBLIC_GEMINI_API_KEY) {
+  throw new Error('Missing NEXT_PUBLIC_GEMINI_API_KEY environment variable');
 }
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY);
 
 export const geminiModel = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
-export async function analyzeWithGemini(prompt: string): Promise<string> {
+export async function analyzeWithGemini(prompt: string, useGrounding: boolean = false): Promise<string> {
   try {
-    const result = await geminiModel.generateContent(prompt);
+    let model;
+    if (useGrounding) {
+      // Use Gemini with grounding capabilities for web search
+      model = genAI.getGenerativeModel({ 
+        model: 'gemini-1.5-flash',
+        tools: [{ googleSearchRetrieval: {} }],
+      });
+    } else {
+      model = geminiModel;
+    }
+
+    const result = await model.generateContent(prompt);
     const response = await result.response;
     return response.text();
   } catch (error) {
@@ -35,6 +46,8 @@ export function createAnalysisPrompt(
 
     PITCH DECK CONTENT:
     ${extractedText}
+
+    If the provided data is incomplete, use your web search capabilities to find the latest information about the company and its KPIs.
 
     Please provide a detailed analysis in the following JSON format:
     {
