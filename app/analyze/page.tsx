@@ -42,14 +42,7 @@ export default function AnalyzePage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {!analysisResult ? (
           <div>
-            <div className="text-center mb-8">
-              <h1 className="text-4xl font-bold text-gray-900 mb-4">
-                AI Pitch Deck Analyzer
-              </h1>
-              <p className="text-xl text-gray-600">
-                Upload your pitch deck to get comprehensive AI-powered analysis and insights
-              </p>
-            </div>
+            
             
             <PitchDeckAnalyzer onAnalysisComplete={handleAnalysisComplete} />
           </div>

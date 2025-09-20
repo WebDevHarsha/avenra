@@ -103,11 +103,11 @@ export interface NewsArticle {
 }
 
 export interface MarketData {
-  sector: string;
-  trends: string[];
-  newsArticles: NewsArticle[];
-  marketSentiment: 'Positive' | 'Neutral' | 'Negative';
-  fetchedAt: Date;
+  sector?: string;
+  trends?: string[];
+  newsArticles?: NewsArticle[];
+  marketSentiment?: 'Positive' | 'Neutral' | 'Negative';
+  fetchedAt?: Date;
 }
 
 // User and session types

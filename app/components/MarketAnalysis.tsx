@@ -48,9 +48,9 @@ export default function MarketAnalysis({ marketData }: MarketAnalysisProps) {
 
           <div className="text-center p-4 bg-green-50 rounded-lg">
             <div className={`text-2xl font-bold mb-1 flex items-center justify-center space-x-2`}>
-              <span>{getSentimentIcon(marketData.marketSentiment)}</span>
-              <span className={getSentimentColor(marketData.marketSentiment).split(' ')[0]}>
-                {marketData.marketSentiment}
+              <span>{getSentimentIcon(marketData.marketSentiment || 'Neutral')}</span>
+              <span className={getSentimentColor(marketData.marketSentiment || 'Neutral').split(' ')[0]}>
+                {marketData.marketSentiment || 'Neutral'}
               </span>
             </div>
             <p className="text-sm text-gray-600">Market Sentiment</p>
@@ -58,7 +58,7 @@ export default function MarketAnalysis({ marketData }: MarketAnalysisProps) {
 
           <div className="text-center p-4 bg-purple-50 rounded-lg">
             <div className="text-2xl font-bold text-purple-600 mb-1">
-              {marketData.newsArticles.length}
+              {marketData.newsArticles?.length || 0}
             </div>
             <p className="text-sm text-gray-600">News Articles</p>
           </div>
@@ -71,7 +71,7 @@ export default function MarketAnalysis({ marketData }: MarketAnalysisProps) {
               🔥 Trending Topics
             </h4>
             <div className="flex flex-wrap gap-2">
-              {marketData.trends.map((trend, index) => (
+              {marketData.trends?.map((trend, index) => (
                 <span
                   key={index}
                   className="px-4 py-2 bg-indigo-100 text-indigo-800 rounded-full text-sm font-medium"
@@ -91,7 +91,8 @@ export default function MarketAnalysis({ marketData }: MarketAnalysisProps) {
         </h3>
 
         <div className="space-y-4">
-          {marketData.newsArticles.slice(0, 6).map((article, index) => (
+          {marketData.newsArticles && marketData.newsArticles.length > 0 ? (
+            marketData.newsArticles?.slice(0, 6)?.map((article, index) => (
             <div key={index} className="border border-gray-100 rounded-lg p-4 hover:bg-gray-50 transition-colors">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
@@ -129,13 +130,20 @@ export default function MarketAnalysis({ marketData }: MarketAnalysisProps) {
                 </a>
               </div>
             </div>
-          ))}
+          ))
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              <p className="text-lg mb-2">📰</p>
+              <p>No recent news articles found for this market.</p>
+              <p className="text-sm mt-1">Market analysis is based on general industry trends.</p>
+            </div>
+          )}
         </div>
 
-        {marketData.newsArticles.length > 6 && (
+        {(marketData.newsArticles?.length || 0) > 6 && (
           <div className="text-center mt-6">
             <button className="px-4 py-2 text-blue-600 hover:text-blue-800 font-medium">
-              View {marketData.newsArticles.length - 6} more articles
+              View {(marketData.newsArticles?.length || 6) - 6} more articles
             </button>
           </div>
         )}
@@ -153,16 +161,16 @@ export default function MarketAnalysis({ marketData }: MarketAnalysisProps) {
             <ul className="space-y-2 text-sm text-gray-700">
               <li className="flex items-start">
                 <span className="text-blue-500 mr-2">•</span>
-                Current market sentiment is <strong>{marketData.marketSentiment.toLowerCase()}</strong> based on recent news analysis
+                Current market sentiment is <strong>{(marketData.marketSentiment || 'neutral').toLowerCase()}</strong> based on recent news analysis
               </li>
               <li className="flex items-start">
                 <span className="text-blue-500 mr-2">•</span>
-                {marketData.newsArticles.length} relevant news articles found in the past week
+                {marketData.newsArticles?.length || 0} relevant news articles found in the past week
               </li>
-              {marketData.trends.length > 0 && (
+              {marketData.trends && marketData.trends.length > 0 && (
                 <li className="flex items-start">
                   <span className="text-blue-500 mr-2">•</span>
-                  Key trending topics include {marketData.trends.slice(0, 3).join(', ')}
+                  Key trending topics include {marketData.trends?.slice(0, 3)?.join(', ') || 'N/A'}
                 </li>
               )}
             </ul>
@@ -173,7 +181,7 @@ export default function MarketAnalysis({ marketData }: MarketAnalysisProps) {
             <ul className="space-y-2 text-sm text-gray-700">
               <li className="flex items-start">
                 <span className="text-green-500 mr-2">•</span>
-                Market data collected on {new Date(marketData.fetchedAt).toLocaleDateString()}
+                Market data collected on {marketData.fetchedAt ? new Date(marketData.fetchedAt).toLocaleDateString() : 'Unknown date'}
               </li>
               <li className="flex items-start">
                 <span className="text-green-500 mr-2">•</span>

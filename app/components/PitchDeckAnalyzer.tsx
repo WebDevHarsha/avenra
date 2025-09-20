@@ -93,27 +93,94 @@ export default function PitchDeckAnalyzer({ onAnalysisComplete }: PitchDeckAnaly
     }
   };
 
-  const extractText = async (file: File) => {
-    const arrayBuffer = await file.arrayBuffer();
-    const base64 = Buffer.from(arrayBuffer).toString('base64');
+  const extractText = async (file: File): Promise<{ success: boolean; data?: { text: string; metadata?: any }; error?: string }> => {
+    return new Promise((resolve) => {
+      console.log('Starting client-side PDF extraction...');
+      
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const typedArray = new Uint8Array(e.target?.result as ArrayBuffer);
 
-    const response = await fetch('/api/extract', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ fileBuffer: base64 }),
-    });
-
-    const result = await response.json();
-    
-    // If the response status is not ok, treat it as an error
-    if (!response.ok) {
-      return {
-        success: false,
-        error: result.error || result.details || 'Failed to extract text'
+          // Check if PDF.js is already loaded
+          if (!(window as any).pdfjsLib) {
+            // Dynamically load pdf.js script
+            const script = document.createElement('script');
+            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js';
+            
+            script.onload = async () => {
+              await processPDF(typedArray, resolve);
+            };
+            
+            script.onerror = () => {
+              resolve({
+                success: false,
+                error: 'Failed to load PDF.js library'
+              });
+            };
+            
+            document.body.appendChild(script);
+          } else {
+            await processPDF(typedArray, resolve);
+          }
+        } catch (error) {
+          console.error('PDF extraction error:', error);
+          resolve({
+            success: false,
+            error: error instanceof Error ? error.message : 'Failed to extract PDF text'
+          });
+        }
       };
+
+      reader.onerror = () => {
+        resolve({
+          success: false,
+          error: 'Failed to read file'
+        });
+      };
+
+      reader.readAsArrayBuffer(file);
+    });
+  };
+
+  const processPDF = async (typedArray: Uint8Array, resolve: (value: any) => void) => {
+    try {
+      const pdfjsLib = (window as any).pdfjsLib;
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.worker.min.js';
+
+      console.log('Loading PDF document...');
+      const pdf = await pdfjsLib.getDocument({ data: typedArray }).promise;
+      
+      console.log(`PDF loaded. Pages: ${pdf.numPages}`);
+      let fullText = '';
+      
+      for (let i = 1; i <= pdf.numPages; i++) {
+        console.log(`Processing page ${i}/${pdf.numPages}...`);
+        const page = await pdf.getPage(i);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items.map((s: any) => s.str).join(' ');
+        fullText += pageText + '\n';
+      }
+
+      console.log(`Extraction complete. Text length: ${fullText.length}`);
+      
+      resolve({
+        success: true,
+        data: {
+          text: fullText.trim(),
+          metadata: {
+            pages: pdf.numPages,
+            extractionMethod: 'client-side-pdfjs'
+          }
+        }
+      });
+    } catch (error) {
+      console.error('PDF processing error:', error);
+      resolve({
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to process PDF'
+      });
     }
-    
-    return result;
   };
 
   const fetchMarketData = async (sector?: string, companyName?: string) => {

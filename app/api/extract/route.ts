@@ -59,48 +59,12 @@ export async function POST(request: NextRequest) {
         );
       }
     } else if (fileBuffer) {
-      // Real PDF text extraction using pdf-parse
-      try {
-        console.log('Processing PDF file with real extraction...');
-        
-        const buffer = Buffer.from(fileBuffer, 'base64');
-        console.log('PDF buffer size:', buffer.length);
-        
-        // Use require() instead of import() to avoid the test file issue
-        const pdfParse = require('pdf-parse');
-        
-        console.log('Starting PDF parsing...');
-        const pdfData = await pdfParse(buffer);
-        
-        console.log('PDF parsing completed:', {
-          pages: pdfData.numpages,
-          textLength: pdfData.text ? pdfData.text.length : 0
-        });
-        
-        if (!pdfData.text || pdfData.text.trim().length === 0) {
-          throw new Error('No text content found in PDF. The PDF might be image-based or encrypted.');
-        }
-        
-        extractionResult = {
-          success: true,
-          data: {
-            text: pdfData.text.trim(),
-            metadata: {
-              pages: pdfData.numpages,
-              fileSize: buffer.length,
-              extractionMethod: 'pdf-parse',
-              info: pdfData.info || {}
-            }
-          }
-        };
-      } catch (pdfError) {
-        console.error('PDF processing error:', pdfError);
-        const errorMessage = pdfError instanceof Error ? pdfError.message : 'Unknown PDF processing error';
-        return NextResponse.json(
-          { success: false, error: 'Failed to process PDF file', details: errorMessage },
-          { status: 500 }
-        );
-      }
+      // File processing is now handled on client-side using PDF.js
+      console.log('File processing request - redirecting to client-side extraction');
+      return NextResponse.json(
+        { success: false, error: 'File processing is now handled on the client side. This endpoint is for URLs only.' },
+        { status: 400 }
+      );
     } else {
       return NextResponse.json(
         { success: false, error: 'Either URL or file buffer is required' },
