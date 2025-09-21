@@ -77,10 +77,11 @@ Important:
     console.log("✅ KPI extraction completed:", kpiData);
 
     return NextResponse.json({ success: true, data: kpiData });
-  } catch (error: any) {
-    console.error("KPI extraction error:", error);
+  } catch (error: unknown) {
+    console.error("KPI extraction error:", error instanceof Error ? error.message : error);
+    const message = error instanceof Error ? error.message : String(error);
     return NextResponse.json(
-      { success: false, error: error.message || "Failed to extract KPIs" },
+      { success: false, error: message || "Failed to extract KPIs" },
       { status: 500 }
     );
   }

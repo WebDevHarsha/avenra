@@ -1,36 +1,36 @@
 import { CompanyKPIs } from "../types";
 
-export function normalizeKPI(apiData: any): CompanyKPIs {
+export function normalizeKPI(apiData: Partial<Record<string, unknown>>): CompanyKPIs {
   return {
-    companyName: apiData.companyName || "N/A",
-    sector: apiData.sector || "N/A",
-    fundingStage: apiData.fundingStage || "N/A",
-    fundingRound: apiData.fundingRound || "N/A",
-    askAmount: apiData.fundingRequest || apiData.askAmount || "N/A",
-    valuation: apiData.valuation || "N/A",
-    revenue: apiData.revenue || "N/A",
-    growthRate: apiData.traction || "N/A",
-    teamSize: apiData.teamSize || "N/A",
+    companyName: (apiData.companyName as string) || "N/A",
+    sector: (apiData.sector as string) || "N/A",
+    fundingStage: (apiData.fundingStage as string) || "N/A",
+    fundingRound: (apiData.fundingRound as string) || "N/A",
+    askAmount: (apiData.fundingRequest as string) || (apiData.askAmount as string) || "N/A",
+    valuation: (apiData.valuation as string) || "N/A",
+    revenue: (apiData.revenue as string) || "N/A",
+    growthRate: (apiData.traction as string) || "N/A",
+    teamSize: (apiData.teamSize as string) || "N/A",
     marketSize: apiData.marketSize
-      ? typeof apiData.marketSize === "object"
-        ? Object.entries(apiData.marketSize)
+      ? (typeof apiData.marketSize === "object"
+        ? Object.entries(apiData.marketSize as Record<string, unknown>)
             .map(([k, v]) => `${k}: ${v}`)
             .join("; ")
-        : apiData.marketSize
+        : String(apiData.marketSize))
       : "N/A",
-    customerCount: apiData.customers || "N/A",
-    burnRate: apiData.burnRate || "N/A",
-    businessModel: apiData.businessModel || "N/A",
+    customerCount: (apiData.customers as string) || "N/A",
+    burnRate: (apiData.burnRate as string) || "N/A",
+    businessModel: (apiData.businessModel as string) || "N/A",
     keyMetrics: Array.isArray(apiData.keyMetrics)
-      ? apiData.keyMetrics.join("; ")
-      : apiData.keyMetrics || "N/A",
-    fundingRequest: apiData.fundingRequest || "N/A",
-    useOfFunds: apiData.useOfFunds || "N/A",
-    traction: apiData.traction || "N/A",
-    technology: apiData.technology || "N/A",
+      ? (apiData.keyMetrics as string[]).join("; ")
+      : (apiData.keyMetrics as string) || "N/A",
+    fundingRequest: (apiData.fundingRequest as string) || "N/A",
+    useOfFunds: (apiData.useOfFunds as string) || "N/A",
+    traction: (apiData.traction as string) || "N/A",
+    technology: (apiData.technology as string) || "N/A",
     competition: Array.isArray(apiData.competition)
-      ? apiData.competition.join(", ")
-      : apiData.competition || "N/A",
-    geographicMarket: apiData.geographicMarket || "N/A",
+      ? (apiData.competition as string[]).join(", ")
+      : (apiData.competition as string) || "N/A",
+    geographicMarket: (apiData.geographicMarket as string) || "N/A",
   };
 }

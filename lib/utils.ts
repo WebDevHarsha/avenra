@@ -70,14 +70,15 @@ export function generateId(): string {
 }
 
 // Debounce function for search/input
-export function debounce<T extends (...args: any[]) => any>(
+export function debounce<T extends (...args: unknown[]) => unknown>(
   func: T,
   delay: number
 ): (...args: Parameters<T>) => void {
-  let timeoutId: NodeJS.Timeout;
+  let timeoutId: ReturnType<typeof setTimeout>;
   return (...args: Parameters<T>) => {
     clearTimeout(timeoutId);
-    timeoutId = setTimeout(() => func.apply(null, args), delay);
+    // use spread instead of .apply
+    timeoutId = setTimeout(() => func(...args), delay);
   };
 }
 
@@ -458,7 +459,7 @@ function getCompetitionCount(competition: string): number {
 /**
  * Normalize KPI data to ensure consistent processing
  */
-export function normalizeKPIData(kpis: any): Partial<import('../types').CompanyKPIs> {
+export function normalizeKPIData(kpis: Partial<Record<string, unknown>>): Partial<import('../types').CompanyKPIs> {
   const normalized: Partial<import('../types').CompanyKPIs> = {};
   
   // Ensure all string fields are properly trimmed and standardized

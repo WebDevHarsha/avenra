@@ -64,8 +64,8 @@ export function GrowthProjectionChart({ data }: GrowthProjectionChartProps) {
       y: {
         beginAtZero: true,
         ticks: {
-          callback: function(value: any) {
-            return value + '%';
+          callback: function(value: unknown) {
+            return String(value) + '%';
           },
         },
       },
@@ -171,8 +171,8 @@ export function ScoreComparisonChart({ scores }: ScoreComparisonChartProps) {
         beginAtZero: true,
         max: 100,
         ticks: {
-          callback: function(value: any) {
-            return value + '%';
+          callback: function(value: unknown) {
+            return String(value) + '%';
           },
         },
       },

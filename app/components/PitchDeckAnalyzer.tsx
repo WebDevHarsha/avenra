@@ -5,12 +5,13 @@ import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from '../../lib/firebase';
 import FileUpload from './FileUpload';
 import LoadingSpinner from './LoadingSpinner';
+import type { CompanyKPIs, AIAnalysis, MarketData } from '../../types';
 
 interface AnalysisResult {
   extractedText: string;
-  kpis: any;
-  analysis: any;
-  marketData: any;
+  kpis: Partial<CompanyKPIs> | null;
+  analysis: Partial<AIAnalysis> | null;
+  marketData: Partial<MarketData> | null;
 }
 
 interface PitchDeckAnalyzerProps {
@@ -130,14 +131,15 @@ export default function PitchDeckAnalyzer({ onAnalysisComplete }: PitchDeckAnaly
     }
   };
 
-  const extractText = async (file: File): Promise<{ success: boolean; data?: { text: string; metadata?: any }; error?: string }> => {
-    return new Promise((resolve) => {
+  const extractText = async (file: File): Promise<{ success: boolean; data?: { text: string; metadata?: unknown }; error?: string }> => {
+    return new Promise((resolve: (value: { success: boolean; data?: { text: string; metadata?: unknown }; error?: string }) => void) => {
       const reader = new FileReader();
       reader.onload = async (e) => {
         try {
           const typedArray = new Uint8Array(e.target?.result as ArrayBuffer);
 
-          if (!(window as any).pdfjsLib) {
+          const pdfjsLib = (window as unknown as { pdfjsLib?: unknown }).pdfjsLib;
+          if (!pdfjsLib) {
             const script = document.createElement('script');
             script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js';
             script.onload = async () => {
@@ -159,9 +161,20 @@ export default function PitchDeckAnalyzer({ onAnalysisComplete }: PitchDeckAnaly
     });
   };
 
-  const processPDF = async (typedArray: Uint8Array, resolve: (value: any) => void) => {
+  // Lightweight local typings for pdf.js objects to avoid using `any`
+  type PdfPageTextItem = { str: string };
+  type PdfTextContent = { items: PdfPageTextItem[] };
+  type PdfPage = { getTextContent: () => Promise<PdfTextContent> };
+  type PdfDocument = { numPages: number; getPage: (n: number) => Promise<PdfPage> };
+  type PdfJsLib = { GlobalWorkerOptions: { workerSrc?: string }; getDocument: (opts: { data: Uint8Array }) => { promise: Promise<PdfDocument> } };
+
+  const processPDF = async (typedArray: Uint8Array, resolve: (value: { success: boolean; data?: { text: string; metadata?: unknown }; error?: string }) => void) => {
     try {
-      const pdfjsLib = (window as any).pdfjsLib;
+      const pdfjsLib = (window as unknown as { pdfjsLib?: PdfJsLib }).pdfjsLib;
+      if (!pdfjsLib) {
+        resolve({ success: false, error: 'PDF.js not loaded' });
+        return;
+      }
       pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.worker.min.js';
       const pdf = await pdfjsLib.getDocument({ data: typedArray }).promise;
 
@@ -169,7 +182,7 @@ export default function PitchDeckAnalyzer({ onAnalysisComplete }: PitchDeckAnaly
       for (let i = 1; i <= pdf.numPages; i++) {
         const page = await pdf.getPage(i);
         const textContent = await page.getTextContent();
-        const pageText = textContent.items.map((s: any) => s.str).join(' ');
+        const pageText = textContent.items.map((s) => s.str).join(' ');
         fullText += pageText + '\n';
       }
 
@@ -191,7 +204,7 @@ export default function PitchDeckAnalyzer({ onAnalysisComplete }: PitchDeckAnaly
     return result.success ? result.data : null;
   };
 
-  const runAIAnalysis = async (extractedText: string, companyData: any, marketData: any) => {
+  const runAIAnalysis = async (extractedText: string, companyData: Partial<CompanyKPIs> | null, marketData: Partial<MarketData> | null) => {
     const response = await fetch('/api/analyze', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

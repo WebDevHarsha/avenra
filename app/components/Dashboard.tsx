@@ -7,16 +7,16 @@ import MarketAnalysis from './MarketAnalysis';
 import { CompanyKPIs, AIAnalysis, MarketData } from '../../types';
 
 interface DashboardProps {
-  kpis: CompanyKPIs;
-  analysis?: AIAnalysis;
-  marketData?: MarketData;
+  kpis?: Partial<CompanyKPIs>;
+  analysis?: Partial<AIAnalysis>;
+  marketData?: Partial<MarketData>;
   extractedText?: string;
 }
 
 export default function Dashboard({ kpis, analysis, marketData, extractedText }: DashboardProps) {
   const [activeTab, setActiveTab] = useState<'kpis' | 'insights' | 'market'>('kpis');
 
-  const tabs = [
+  const tabs: { id: 'kpis' | 'insights' | 'market'; label: string; icon: string }[] = [
     { id: 'kpis', label: 'KPIs Overview', icon: '📊' },
     { id: 'insights', label: 'AI Insights', icon: '🤖' },
     { id: 'market', label: 'Market Analysis', icon: '📈' },
@@ -25,12 +25,12 @@ export default function Dashboard({ kpis, analysis, marketData, extractedText }:
   return (
     <div className="max-w-7xl mx-auto p-6">
       {/* Header */}
-      <div className="text-center mb-8">
+        <div className="text-center mb-8">
         <h1 className="text-4xl font-bold text-gray-900 mb-2">
           Analysis Dashboard
         </h1>
         <p className="text-xl text-gray-600">
-          {kpis.companyName || 'Company'} - Comprehensive Investment Analysis
+          {kpis?.companyName ?? 'Company'} - Comprehensive Investment Analysis
         </p>
       </div>
 
@@ -40,7 +40,7 @@ export default function Dashboard({ kpis, analysis, marketData, extractedText }:
           {tabs.map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
+              onClick={() => setActiveTab(tab.id)}
               className={`
                 flex items-center space-x-2 px-4 py-2 rounded-md font-medium transition-all duration-200
                 ${activeTab === tab.id
@@ -60,7 +60,9 @@ export default function Dashboard({ kpis, analysis, marketData, extractedText }:
       <div className="transition-all duration-300">
         {activeTab === 'kpis' && (
           <div className="animate-fade-in">
-            <KPIDashboard kpis={kpis} />
+            {kpis ? <KPIDashboard kpis={kpis as CompanyKPIs} /> : (
+              <div className="text-center py-8 text-gray-600">No KPI data available</div>
+            )}
             
             {extractedText && (
               <div className="mt-8 bg-gray-50 border border-gray-200 rounded-lg p-6">
@@ -80,7 +82,7 @@ export default function Dashboard({ kpis, analysis, marketData, extractedText }:
 
         {activeTab === 'insights' && analysis && (
           <div className="animate-fade-in">
-            <AIInsights analysis={analysis} />
+            <AIInsights analysis={analysis as AIAnalysis} />
           </div>
         )}
 
@@ -116,7 +118,7 @@ export default function Dashboard({ kpis, analysis, marketData, extractedText }:
       </div>
 
       {/* Summary Card at Bottom */}
-      {analysis && (
+      {analysis && analysis.riskAssessment && (
         <div className="mt-12 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-8 text-center">
           <h3 className="text-2xl font-bold text-gray-900 mb-4">
             Overall Investment Score
@@ -135,7 +137,7 @@ export default function Dashboard({ kpis, analysis, marketData, extractedText }:
               <p className="text-sm text-gray-600 mt-1">Confidence Level</p>
             </div>
             <div>
-              <div className={`text-4xl font-bold ${
+                <div className={`text-4xl font-bold ${
                 analysis.riskAssessment.overallRisk === 'Low' ? 'text-green-600' :
                 analysis.riskAssessment.overallRisk === 'Medium' ? 'text-yellow-600' :
                 'text-red-600'

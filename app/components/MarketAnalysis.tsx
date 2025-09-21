@@ -102,7 +102,7 @@ export default function MarketAnalysis({ marketData }: MarketAnalysisProps) {
                     {article.description}
                   </p>
                   <div className="flex items-center space-x-4 text-xs text-gray-500">
-                    <span>{article.source}</span>
+                    <span>{typeof article.source === 'string' ? article.source : article.source?.name || 'Unknown'}</span>
                     <span>•</span>
                     <span>{new Date(article.publishedAt).toLocaleDateString()}</span>
                     {article.relevanceScore && (

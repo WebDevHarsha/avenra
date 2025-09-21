@@ -39,8 +39,9 @@ export default function AuthForm({ onSuccess }: AuthFormProps) {
       }
 
       onSuccess?.();
-    } catch (err: any) {
-      setError(err.message || 'An error occurred');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      setError(message || 'An error occurred');
     } finally {
       setIsLoading(false);
     }
@@ -54,8 +55,9 @@ export default function AuthForm({ onSuccess }: AuthFormProps) {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
       onSuccess?.();
-    } catch (err: any) {
-      setError(err.message || 'Failed to sign in with Google');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      setError(message || 'Failed to sign in with Google');
     } finally {
       setIsLoading(false);
     }

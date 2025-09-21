@@ -1,4 +1,4 @@
-'use client';
+ 'use client';
 
 import { useState } from 'react';
 import { useAuthState } from 'react-firebase-hooks/auth';
@@ -7,11 +7,16 @@ import { useRouter } from 'next/navigation';
 import PitchDeckAnalyzer from '../components/PitchDeckAnalyzer';
 import Dashboard from '../components/Dashboard';
 import LoadingSpinner from '../components/LoadingSpinner';
+import type { CompanyKPIs, AIAnalysis, MarketData } from '@/types';
 
 export default function AnalyzePage() {
   const [user, loading] = useAuthState(auth);
-  const [analysisResult, setAnalysisResult] = useState<any>(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisResult, setAnalysisResult] = useState<{
+    kpis?: Partial<CompanyKPIs> | null;
+    analysis?: Partial<AIAnalysis> | null;
+    marketData?: Partial<MarketData> | null;
+    extractedText?: string | null;
+  } | null>(null);
   const router = useRouter();
 
   if (loading) {
@@ -27,9 +32,13 @@ export default function AnalyzePage() {
     return null;
   }
 
-  const handleAnalysisComplete = (result: any) => {
+  const handleAnalysisComplete = (result: {
+    kpis?: Partial<CompanyKPIs> | null;
+    analysis?: Partial<AIAnalysis> | null;
+    marketData?: Partial<MarketData> | null;
+    extractedText?: string | null;
+  }) => {
     setAnalysisResult(result);
-    setIsAnalyzing(false);
   };
 
   const handleNewAnalysis = () => {
@@ -66,14 +75,18 @@ export default function AnalyzePage() {
             </div>
 
             <Dashboard
-              kpis={analysisResult.kpis}
-              analysis={analysisResult.analysis}
-              marketData={analysisResult.marketData}
-              extractedText={analysisResult.extractedText}
+              kpis={analysisResult.kpis ?? undefined}
+              analysis={analysisResult.analysis ?? undefined}
+              marketData={analysisResult.marketData ?? undefined}
+              extractedText={analysisResult.extractedText ?? undefined}
             />
           </div>
         )}
       </div>
     </div>
   );
+}
+
+function setIsAnalyzing(arg0: boolean) {
+  throw new Error('Function not implemented.');
 }

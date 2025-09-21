@@ -34,14 +34,15 @@ export async function POST(request: NextRequest) {
         console.log('FireCrawler scrape result success:', scrapeResult.success);
 
         if (!scrapeResult.success) {
+          const details = (scrapeResult as { error?: unknown }).error;
           return NextResponse.json(
-            { success: false, error: 'Failed to scrape URL', details: (scrapeResult as any).error },
+            { success: false, error: 'Failed to scrape URL', details: typeof details === 'string' ? details : undefined },
             { status: 500 }
           );
         }
 
-        // Type assertion for successful response
-        const successResult = scrapeResult as any;
+        // Type result shape safely
+        const successResult = scrapeResult as { markdown?: string; html?: string; metadata?: Record<string, unknown> };
         
         extractionResult = {
           success: true,

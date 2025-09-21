@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { analyzeWithGemini, createAnalysisPrompt } from '../../../lib/gemini';
+import type { AIAnalysis, Recommendation } from '../../../types';
 import { 
   calculateGrowthPotentialScore, 
   calculateRiskScore, 
@@ -12,7 +13,7 @@ import {
 
 export async function POST(request: NextRequest) {
   try {
-    const { extractedText, companyData, marketData } = await request.json();
+  const { extractedText, companyData, marketData } = await request.json();
 
     if (!extractedText) {
       return NextResponse.json(
@@ -49,8 +50,11 @@ export async function POST(request: NextRequest) {
       }
     } catch (parseError) {
       console.error('Failed to get AI insights, using fallback:', parseError);
-      qualitativeInsights = createFallbackAnalysis(extractedText, companyData);
+      qualitativeInsights = createFallbackAnalysis(extractedText, companyData as Partial<import('../../../types').CompanyKPIs>);
     }
+
+    // Ensure qualitativeInsights is sanitized and has safe types
+    qualitativeInsights = sanitizeAnalysisData(qualitativeInsights as Partial<AIAnalysis>);
 
     // Combine deterministic scores with AI-generated qualitative insights
     const deterministicAnalysis = {
@@ -120,7 +124,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-function createFallbackAnalysis(extractedText: string, companyData: any) {
+function createFallbackAnalysis(extractedText: string, companyData: Partial<import('../../../types').CompanyKPIs> | undefined) {
   // Basic fallback analysis when Gemini parsing fails
   return {
     growthPotential: {
@@ -159,52 +163,53 @@ function createFallbackAnalysis(extractedText: string, companyData: any) {
   };
 }
 
-function sanitizeAnalysisData(data: any) {
+function sanitizeAnalysisData(data: Partial<AIAnalysis> | undefined): Partial<AIAnalysis> {
+  const d = data || {};
   // Ensure all required fields exist with proper types
   return {
-    growthPotential: {
-      score: Math.min(Math.max(data.growthPotential?.score || 50, 0), 100),
-      factors: Array.isArray(data.growthPotential?.factors) ? data.growthPotential.factors : [],
+      growthPotential: {
+      score: Math.min(Math.max(d.growthPotential?.score ?? 50, 0), 100),
+      factors: Array.isArray(d.growthPotential?.factors) ? d.growthPotential?.factors as string[] : [],
       projectedGrowth: {
-        year1: Math.max(data.growthPotential?.projectedGrowth?.year1 || 10, 0),
-        year3: Math.max(data.growthPotential?.projectedGrowth?.year3 || 30, 0),
-        year5: Math.max(data.growthPotential?.projectedGrowth?.year5 || 60, 0)
+        year1: Math.max(d.growthPotential?.projectedGrowth?.year1 ?? 10, 0),
+        year3: Math.max(d.growthPotential?.projectedGrowth?.year3 ?? 30, 0),
+        year5: Math.max(d.growthPotential?.projectedGrowth?.year5 ?? 60, 0)
       },
-      keyDrivers: Array.isArray(data.growthPotential?.keyDrivers) ? data.growthPotential.keyDrivers : []
+      keyDrivers: Array.isArray(d.growthPotential?.keyDrivers) ? d.growthPotential?.keyDrivers as string[] : []
     },
     riskAssessment: {
-      overallRisk: ['Low', 'Medium', 'High'].includes(data.riskAssessment?.overallRisk) 
-        ? data.riskAssessment.overallRisk : 'Medium',
-      riskScore: Math.min(Math.max(data.riskAssessment?.riskScore || 50, 0), 100),
-      redFlags: Array.isArray(data.riskAssessment?.redFlags) ? data.riskAssessment.redFlags : [],
-      mitigationStrategies: Array.isArray(data.riskAssessment?.mitigationStrategies) 
-        ? data.riskAssessment.mitigationStrategies : [],
+      overallRisk: ['Low', 'Medium', 'High'].includes(d.riskAssessment?.overallRisk as string) 
+        ? (d.riskAssessment!.overallRisk as 'Low' | 'Medium' | 'High') : 'Medium',
+      riskScore: Math.min(Math.max(d.riskAssessment?.riskScore ?? 50, 0), 100),
+      redFlags: Array.isArray(d.riskAssessment?.redFlags) ? d.riskAssessment?.redFlags as string[] : [],
+      mitigationStrategies: Array.isArray(d.riskAssessment?.mitigationStrategies) 
+        ? d.riskAssessment?.mitigationStrategies as string[] : [],
       riskFactors: {
-        market: Math.min(Math.max(data.riskAssessment?.riskFactors?.market || 50, 0), 100),
-        team: Math.min(Math.max(data.riskAssessment?.riskFactors?.team || 50, 0), 100),
-        financial: Math.min(Math.max(data.riskAssessment?.riskFactors?.financial || 50, 0), 100),
-        competitive: Math.min(Math.max(data.riskAssessment?.riskFactors?.competitive || 50, 0), 100)
+        market: Math.min(Math.max(d.riskAssessment?.riskFactors?.market ?? 50, 0), 100),
+        team: Math.min(Math.max(d.riskAssessment?.riskFactors?.team ?? 50, 0), 100),
+        financial: Math.min(Math.max(d.riskAssessment?.riskFactors?.financial ?? 50, 0), 100),
+        competitive: Math.min(Math.max(d.riskAssessment?.riskFactors?.competitive ?? 50, 0), 100)
       }
     },
     marketAnalysis: {
-      marketTrends: Array.isArray(data.marketAnalysis?.marketTrends) ? data.marketAnalysis.marketTrends : [],
-      competitivePosition: data.marketAnalysis?.competitivePosition || 'Position analysis pending',
-      marketSize: Math.max(data.marketAnalysis?.marketSize || 0, 0),
-      growthRate: Math.max(data.marketAnalysis?.growthRate || 0, 0),
-      opportunities: Array.isArray(data.marketAnalysis?.opportunities) ? data.marketAnalysis.opportunities : [],
-      threats: Array.isArray(data.marketAnalysis?.threats) ? data.marketAnalysis.threats : []
+      marketTrends: Array.isArray(d.marketAnalysis?.marketTrends) ? d.marketAnalysis?.marketTrends as string[] : [],
+      competitivePosition: d.marketAnalysis?.competitivePosition || 'Position analysis pending',
+      marketSize: Math.max(d.marketAnalysis?.marketSize ?? 0, 0),
+      growthRate: Math.max(d.marketAnalysis?.growthRate ?? 0, 0),
+      opportunities: Array.isArray(d.marketAnalysis?.opportunities) ? d.marketAnalysis?.opportunities as string[] : [],
+      threats: Array.isArray(d.marketAnalysis?.threats) ? d.marketAnalysis?.threats as string[] : []
     },
-    recommendations: Array.isArray(data.recommendations) ? data.recommendations.map((rec: any) => ({
-      type: ['investment', 'growth', 'risk-mitigation', 'market-strategy'].includes(rec.type) 
-        ? rec.type : 'growth',
-      priority: ['High', 'Medium', 'Low'].includes(rec.priority) ? rec.priority : 'Medium',
+    recommendations: Array.isArray(d.recommendations) ? (d.recommendations as Partial<Recommendation>[]).map((rec) => ({
+      type: ['investment', 'growth', 'risk-mitigation', 'market-strategy'].includes(rec.type as string) 
+        ? (rec.type as Recommendation['type']) : 'growth',
+      priority: ['High', 'Medium', 'Low'].includes(rec.priority as string) ? (rec.priority as Recommendation['priority']) : 'Medium',
       title: rec.title || 'Recommendation',
       description: rec.description || 'Description pending',
       expectedImpact: rec.expectedImpact || 'Impact analysis pending',
       timeline: rec.timeline || 'Timeline to be determined'
     })) : [],
-    overallScore: Math.min(Math.max(data.overallScore || 50, 0), 100),
-    confidence: Math.min(Math.max(data.confidence || 75, 0), 100)
+    overallScore: Math.min(Math.max(d.overallScore ?? 50, 0), 100),
+    confidence: Math.min(Math.max(d.confidence ?? 75, 0), 100)
   };
 }
 

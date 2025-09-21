@@ -109,7 +109,7 @@ export interface NewsArticle {
   description: string;
   url: string;
   publishedAt: string;
-  source: string;
+  source: string | { name?: string };
   relevanceScore?: number;
 }
 
@@ -161,7 +161,7 @@ export interface FireCrawlerResponse {
   data: {
     markdown: string;
     html: string;
-    metadata: Record<string, any>;
+    metadata: Record<string, unknown>;
   };
   error?: string;
 }
@@ -174,6 +174,6 @@ export interface NewsAPIResponse {
 
 export interface GeminiResponse {
   success: boolean;
-  data: any;
+  data: unknown;
   error?: string;
 }

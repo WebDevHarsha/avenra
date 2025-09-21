@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { analyzeWithGemini } from '../../../lib/gemini';
+import type { NewsAPIResponse, NewsArticle } from '../../../types';
 
 export async function POST(request: NextRequest) {
   try {
@@ -66,8 +67,8 @@ Optimized search query:`;
     
     console.log('NewsAPI response status:', newsResponse.status);
     // console.log('NewsAPI total results:', newsData.totalResults);
-    if (newsData.articles) {
-      console.log('First few article titles:', newsData.articles.slice(0, 3).map((a: any) => a.title));
+    if (Array.isArray(newsData.articles)) {
+      console.log('First few article titles:', (newsData.articles as NewsArticle[]).slice(0, 3).map((a) => a.title));
     }
 
     if (!newsResponse.ok || newsData.status === 'error') {
@@ -94,22 +95,22 @@ Optimized search query:`;
     const headlinesData = await headlinesResponse.json();
 
     // Process articles and calculate relevance
-    const processedArticles = newsData.articles?.map((article: any) => ({
+    const processedArticles = ((newsData.articles as NewsArticle[]) || []).map((article) => ({
       title: article.title,
       description: article.description,
       url: article.url,
       publishedAt: article.publishedAt,
-      source: article.source.name,
+      source: typeof article.source === 'string' ? article.source : (article.source?.name ?? ''),
       relevanceScore: calculateRelevanceScore(article, companyName, sector, keywords),
     }));
 
     // Filter and sort by relevance score - only keep highly relevant articles
-    const filteredArticles = processedArticles.filter((article: any) => article.relevanceScore >= 40);
-    filteredArticles.sort((a: any, b: any) => b.relevanceScore - a.relevanceScore);
+  const filteredArticles = processedArticles.filter((article) => (article.relevanceScore ?? 0) >= 40);
+  filteredArticles.sort((a, b) => (b.relevanceScore ?? 0) - (a.relevanceScore ?? 0));
 
-    console.log('Processed articles count:', processedArticles.length);
-    console.log('Filtered articles count:', filteredArticles.length);
-    console.log('Top article scores:', filteredArticles.slice(0, 5).map((a: any) => ({ title: a.title.slice(0, 50) + '...', score: a.relevanceScore })));
+  console.log('Processed articles count:', processedArticles.length);
+  console.log('Filtered articles count:', filteredArticles.length);
+  console.log('Top article scores:', filteredArticles.slice(0, 5).map((a) => ({ title: a.title.slice(0, 50) + '...', score: a.relevanceScore })));
 
     // Analyze market sentiment from headlines and relevant company articles
     const marketSentiment = analyzeMarketSentiment([
@@ -148,10 +149,10 @@ Optimized search query:`;
   }
 }
 
-function calculateRelevanceScore(article: any, companyName?: string, sector?: string, keywords?: string[]): number {
+function calculateRelevanceScore(article: NewsArticle | { title?: string; description?: string }, companyName?: string, sector?: string, keywords?: string[]): number {
   let score = 0;
-  const title = (article.title || '').toLowerCase();
-  const description = (article.description || '').toLowerCase();
+  const title = (article.title ?? '').toLowerCase();
+  const description = (article.description ?? '').toLowerCase();
   const content = `${title} ${description}`;
 
   if (!companyName) return 0;
@@ -204,7 +205,7 @@ function calculateRelevanceScore(article: any, companyName?: string, sector?: st
   return Math.max(0, Math.min(score, 100));
 }
 
-function analyzeMarketSentiment(articles: any[]): 'Positive' | 'Neutral' | 'Negative' {
+function analyzeMarketSentiment(articles: Array<NewsArticle | { title?: string; description?: string }>): 'Positive' | 'Neutral' | 'Negative' {
   const positiveWords = ['growth', 'increase', 'rise', 'surge', 'success', 'profit', 'gain', 'boom'];
   const negativeWords = ['decline', 'fall', 'drop', 'loss', 'recession', 'crisis', 'crash', 'downturn'];
   
@@ -212,7 +213,7 @@ function analyzeMarketSentiment(articles: any[]): 'Positive' | 'Neutral' | 'Nega
   let negativeCount = 0;
 
   articles.forEach(article => {
-    const content = `${article.title} ${article.description}`.toLowerCase();
+    const content = `${article.title ?? ''} ${article.description ?? ''}`.toLowerCase();
     positiveWords.forEach(word => { if (content.includes(word)) positiveCount++; });
     negativeWords.forEach(word => { if (content.includes(word)) negativeCount++; });
   });
@@ -222,7 +223,7 @@ function analyzeMarketSentiment(articles: any[]): 'Positive' | 'Neutral' | 'Nega
   return 'Neutral';
 }
 
-function extractMarketTrends(articles: any[], sector?: string): string[] {
+function extractMarketTrends(articles: Array<NewsArticle | { title?: string; description?: string }>, sector?: string): string[] {
   const trendKeywords = [
     'artificial intelligence', 'ai', 'machine learning', 'blockchain', 'cryptocurrency',
     'sustainability', 'green energy', 'electric vehicles', 'remote work', 'digital transformation',
@@ -232,7 +233,7 @@ function extractMarketTrends(articles: any[], sector?: string): string[] {
   const trendCounts: { [key: string]: number } = {};
   
   articles.slice(0, 20).forEach(article => {
-    const content = `${article.title} ${article.description}`.toLowerCase();
+    const content = `${article.title ?? ''} ${article.description ?? ''}`.toLowerCase();
     trendKeywords.forEach(keyword => {
       if (content.includes(keyword.toLowerCase())) {
         trendCounts[keyword] = (trendCounts[keyword] || 0) + 1;

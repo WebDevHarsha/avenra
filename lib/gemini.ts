@@ -42,8 +42,8 @@ export async function analyzeWithGemini(
 
 // 🔹 Custom prompt builder
 export function createAnalysisPrompt(
-  companyData: any,
-  marketData: any,
+  companyData: Partial<import('../types').CompanyKPIs> | undefined,
+  marketData: Partial<import('../types').MarketData> | undefined,
   extractedText: string
 ): string {
   return `

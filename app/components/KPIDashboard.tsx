@@ -10,7 +10,7 @@ interface KPIDashboardProps {
 
 export default function KPIDashboard({ kpis, className = '' }: KPIDashboardProps) {
   // Helper function to safely get values and handle missing fields
-  const getValue = (value: any) => {
+  const getValue = (value: unknown) => {
     if (value === undefined || value === null || value === '') return 'N/A';
     return typeof value === 'string' ? value : JSON.stringify(value);
   };
@@ -21,7 +21,7 @@ export default function KPIDashboard({ kpis, className = '' }: KPIDashboardProps
   { label: 'Stage', value: getValue(kpis.fundingStage), icon: '📊', color: 'bg-purple-50 border-purple-200' },
   { label: 'Team Size', value: getValue(kpis.teamSize), icon: '👥', color: 'bg-pink-50 border-pink-200' },
   { label: 'Revenue', value: getValue(kpis.revenue), icon: '📈', color: 'bg-emerald-50 border-emerald-200' },
-  { label: 'Customers', value: getValue((kpis as any).customers || kpis.customerCount), icon: '👤', color: 'bg-cyan-50 border-cyan-200' },
+  { label: 'Customers', value: getValue(((kpis as Partial<import('../../types').CompanyKPIs>).customers) || kpis.customerCount), icon: '👤', color: 'bg-cyan-50 border-cyan-200' },
   { label: 'Market Size', value: getValue(kpis.marketSize), icon: '🌍', color: 'bg-teal-50 border-teal-200' },
   { label: 'Competition', value: getValue(kpis.competition), icon: '⚔️', color: 'bg-lime-50 border-lime-200' },
   { label: 'Geographic Market', value: getValue(kpis.geographicMarket), icon: '🗺️', color: 'bg-fuchsia-50 border-fuchsia-200' },
