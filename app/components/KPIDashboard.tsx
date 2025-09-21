@@ -127,7 +127,7 @@ export default function KPIDashboard({ kpis, className = '' }: KPIDashboardProps
         </div>
       )}
 
-      {kpis.keyMetrics && Object.keys(kpis.keyMetrics).length > 0 && (
+      {/* {kpis.keyMetrics && Object.keys(kpis.keyMetrics).length > 0 && (
         <div className="bg-white border border-gray-200 rounded-lg p-6">
           <h4 className="text-lg font-semibold text-gray-900 mb-4">
             Additional Key Metrics
@@ -145,7 +145,7 @@ export default function KPIDashboard({ kpis, className = '' }: KPIDashboardProps
             ))}
           </div>
         </div>
-      )}
+      )} */}
     </div>
   );
 }
