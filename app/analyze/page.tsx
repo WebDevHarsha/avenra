@@ -1,6 +1,6 @@
  'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
@@ -26,9 +26,13 @@ export default function AnalyzePage() {
       </div>
     );
   }
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/auth');
+    }
+  }, [loading, user, router]);
 
   if (!user) {
-    router.push('/auth');
     return null;
   }
 
@@ -57,21 +61,31 @@ export default function AnalyzePage() {
           </div>
         ) : (
           <div>
-            <div className="flex items-center justify-between mb-8">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4">
+              <div className="min-w-0">
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 truncate">
                   Analysis Complete
                 </h1>
-                <p className="text-gray-600 mt-2">
+                <p className="text-gray-600 mt-1 sm:mt-2 text-sm sm:text-base">
                   Comprehensive AI analysis results for your pitch deck
                 </p>
               </div>
-              <button
-                onClick={handleNewAnalysis}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
-              >
-                Analyze New Deck
-              </button>
+
+              <div className="flex w-full md:w-auto flex-col sm:flex-row gap-3">
+                <button
+                  onClick={handleNewAnalysis}
+                  className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  Analyze New Deck
+                </button>
+
+                <button
+                  onClick={() => router.push('/simulation')}
+                  className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                >
+                  Start Simulation
+                </button>
+              </div>
             </div>
 
             <Dashboard

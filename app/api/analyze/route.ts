@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
       }
     } catch (parseError) {
       console.error('Failed to get AI insights, using fallback:', parseError);
-      qualitativeInsights = createFallbackAnalysis(extractedText, companyData as Partial<import('../../../types').CompanyKPIs>);
+      // qualitativeInsights = createFallbackAnalysis(extractedText, companyData as Partial<import('../../../types').CompanyKPIs>);
     }
 
     // Ensure qualitativeInsights is sanitized and has safe types
@@ -124,44 +124,44 @@ export async function POST(request: NextRequest) {
   }
 }
 
-function createFallbackAnalysis(extractedText: string, companyData: Partial<import('../../../types').CompanyKPIs> | undefined) {
-  // Basic fallback analysis when Gemini parsing fails
-  return {
-    growthPotential: {
-      score: 65,
-      factors: ['Market opportunity', 'Team experience'],
-      projectedGrowth: { year1: 25, year3: 75, year5: 150 },
-      keyDrivers: ['Product innovation', 'Market expansion']
-    },
-    riskAssessment: {
-      overallRisk: 'Medium',
-      riskScore: 45,
-      redFlags: ['Competition risk', 'Market timing'],
-      mitigationStrategies: ['Strengthen competitive moat', 'Accelerate go-to-market'],
-      riskFactors: { market: 50, team: 30, financial: 40, competitive: 60 }
-    },
-    marketAnalysis: {
-      marketTrends: ['Digital transformation', 'Remote work adoption'],
-      competitivePosition: 'Emerging player with differentiated approach',
-      marketSize: 1000000000,
-      growthRate: 15,
-      opportunities: ['Market expansion', 'Product diversification'],
-      threats: ['Increased competition', 'Economic uncertainty']
-    },
-    recommendations: [
-      {
-        type: 'growth',
-        priority: 'High',
-        title: 'Accelerate Product Development',
-        description: 'Focus on core product features to establish market position',
-        expectedImpact: 'Improved market competitiveness',
-        timeline: '6-12 months'
-      }
-    ],
-    overallScore: 72,
-    confidence: 75
-  };
-}
+// function createFallbackAnalysis(extractedText: string, companyData: Partial<import('../../../types').CompanyKPIs> | undefined) {
+//   // Basic fallback analysis when Gemini parsing fails
+//   return {
+//     growthPotential: {
+//       score: 65,
+//       factors: ['Market opportunity', 'Team experience'],
+//       projectedGrowth: { year1: 25, year3: 75, year5: 150 },
+//       keyDrivers: ['Product innovation', 'Market expansion']
+//     },
+//     riskAssessment: {
+//       overallRisk: 'Medium',
+//       riskScore: 45,
+//       redFlags: ['Competition risk', 'Market timing'],
+//       mitigationStrategies: ['Strengthen competitive moat', 'Accelerate go-to-market'],
+//       riskFactors: { market: 50, team: 30, financial: 40, competitive: 60 }
+//     },
+//     marketAnalysis: {
+//       marketTrends: ['Digital transformation', 'Remote work adoption'],
+//       competitivePosition: 'Emerging player with differentiated approach',
+//       marketSize: 1000000000,
+//       growthRate: 15,
+//       opportunities: ['Market expansion', 'Product diversification'],
+//       threats: ['Increased competition', 'Economic uncertainty']
+//     },
+//     recommendations: [
+//       {
+//         type: 'growth',
+//         priority: 'High',
+//         title: 'Accelerate Product Development',
+//         description: 'Focus on core product features to establish market position',
+//         expectedImpact: 'Improved market competitiveness',
+//         timeline: '6-12 months'
+//       }
+//     ],
+//     overallScore: 72,
+//     confidence: 75
+//   };
+// }
 
 function sanitizeAnalysisData(data: Partial<AIAnalysis> | undefined): Partial<AIAnalysis> {
   const d = data || {};

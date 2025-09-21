@@ -39,13 +39,13 @@ export default function KPIDashboard({ kpis, className = '' }: KPIDashboardProps
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {kpiCards.map((kpi, index) => (
           <div key={index} className={`p-4 rounded-lg border-2 ${kpi.color} transition-all duration-200 hover:shadow-md hover:scale-105`}>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-2xl">{kpi.icon}</span>
-              <div className="text-right">
-                <p className="text-xs font-medium text-gray-600 uppercase tracking-wide">{kpi.label}</p>
+            <div className="flex items-start justify-between mb-2">
+              <span className="text-2xl mr-3 flex-shrink-0">{kpi.icon}</span>
+              <div className="text-right flex-1">
+                <p className="text-xs font-medium text-gray-600 uppercase tracking-wide whitespace-normal">{kpi.label}</p>
               </div>
             </div>
-            <p className="text-lg font-semibold text-gray-900 truncate">
+            <p className="text-lg font-semibold text-gray-900 whitespace-normal break-words">
               {typeof kpi.value === 'string' ? kpi.value : JSON.stringify(kpi.value)}
             </p>
           </div>
