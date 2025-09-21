@@ -9,8 +9,15 @@ import Link from 'next/link';
 
 export default function DashboardPage() {
   const [user, loading] = useAuthState(auth);
-  const [recentAnalyses, _] = useState([]);
+  const [recentAnalyses] = useState([]);
   const router = useRouter();
+
+  // Keep hook calls unconditional
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/auth');
+    }
+  }, [loading, user, router]);
 
   if (loading) {
     return (
@@ -19,12 +26,6 @@ export default function DashboardPage() {
       </div>
     );
   }
-
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push('/auth');
-    }
-  }, [loading, user, router]);
 
   if (!user) {
     return null;

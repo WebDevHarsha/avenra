@@ -13,7 +13,7 @@ export default function SimulationPage() {
                     </div>
                     <div>
                         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Simulation</h1>
-                        <p className="text-gray-600 mt-1">This page is under construction. We're working on an interactive simulation feature.</p>
+                        <p className="text-gray-600 mt-1">This page is under construction. We are working on an interactive simulation feature.</p>
                     </div>
                 </div>
 

@@ -4,7 +4,7 @@ import type {  NewsArticle } from '../../../types';
 
 export async function POST(request: NextRequest) {
   try {
-    const { companyName, sector, keywords, country = 'us' } = await request.json();
+  const { companyName, sector: _sector, keywords: _keywords, country = 'us' } = await request.json();
 
     if (!process.env.NEWS_API) {
       return NextResponse.json(
@@ -17,9 +17,9 @@ export async function POST(request: NextRequest) {
     let searchQuery = '';
     if (companyName) {
       // Use Gemini to optimize the search query for news APIs
-      const optimizationPrompt = `
+  const optimizationPrompt = `
 Given this company name: "${companyName}"
-And this sector: "${sector || 'not specified'}"
+And this sector: "${_sector || 'not specified'}"
 
 Create an optimized search query for NewsAPI that will find relevant recent news articles SPECIFICALLY about this company. 
 
@@ -47,10 +47,10 @@ Optimized search query:`;
       }
     } else {
       // Fallback to original logic if no company name provided
-      if (sector) searchQuery += sector;
-      if (keywords && keywords.length > 0) {
+      if (_sector) searchQuery += _sector;
+      if (_keywords && _keywords.length > 0) {
         if (searchQuery) searchQuery += ' AND ';
-        searchQuery += keywords.join(' OR ');
+        searchQuery += _keywords.join(' OR ');
       }
       if (!searchQuery) searchQuery = 'startup OR investment OR funding OR venture capital';
     }
@@ -82,7 +82,7 @@ Optimized search query:`;
             totalResults: 0,
             searchQuery,
             companyName,
-            sector: sector || 'General',
+            sector: _sector || 'General',
             lastUpdated: new Date().toISOString()
           }
         }
@@ -101,7 +101,7 @@ Optimized search query:`;
       url: article.url,
       publishedAt: article.publishedAt,
       source: typeof article.source === 'string' ? article.source : (article.source?.name ?? ''),
-      relevanceScore: calculateRelevanceScore(article, companyName, sector, keywords),
+      relevanceScore: calculateRelevanceScore(article, companyName),
     }));
 
     // Filter and sort by relevance score - only keep highly relevant articles
@@ -119,7 +119,7 @@ Optimized search query:`;
     ]);
 
     // Extract market trends
-    const marketTrends = extractMarketTrends(filteredArticles, sector);
+  const marketTrends = extractMarketTrends(filteredArticles);
 
     const result = {
       success: true,
@@ -129,7 +129,7 @@ Optimized search query:`;
         marketSentiment,
         marketTrends,
         companyName,
-        sector,
+        sector: _sector,
         fetchedAt: new Date().toISOString(),
         totalResults: newsData.totalResults || 0,
       },
@@ -149,7 +149,7 @@ Optimized search query:`;
   }
 }
 
-function calculateRelevanceScore(article: NewsArticle | { title?: string; description?: string }, companyName?: string, sector?: string, keywords?: string[]): number {
+function calculateRelevanceScore(article: NewsArticle | { title?: string; description?: string }, companyName?: string): number {
   let score = 0;
   const title = (article.title ?? '').toLowerCase();
   const description = (article.description ?? '').toLowerCase();
@@ -223,7 +223,7 @@ function analyzeMarketSentiment(articles: Array<NewsArticle | { title?: string; 
   return 'Neutral';
 }
 
-function extractMarketTrends(articles: Array<NewsArticle | { title?: string; description?: string }>, sector?: string): string[] {
+function extractMarketTrends(articles: Array<NewsArticle | { title?: string; description?: string }>): string[] {
   const trendKeywords = [
     'artificial intelligence', 'ai', 'machine learning', 'blockchain', 'cryptocurrency',
     'sustainability', 'green energy', 'electric vehicles', 'remote work', 'digital transformation',

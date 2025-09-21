@@ -5,6 +5,7 @@ import { useAuthState } from 'react-firebase-hooks/auth';
 import { signOut } from 'firebase/auth';
 import { auth } from '../../lib/firebase';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function Navigation() {
   const [user, loading] = useAuthState(auth);
@@ -25,7 +26,7 @@ export default function Navigation() {
           {/* Logo and Brand */}
           <div className="flex items-center">
             <Link href="/" className="flex items-center space-x-2">
-              <img src="/avenra.png" alt="Avenra logo" className="w-6 h-6 object-contain" />
+              <Image src="/avenra.png" alt="Avenra logo" width={24} height={24} className="object-contain" />
 
               <span className="text-xl font-bold text-gray-900">Avenra AI</span>
             </Link>

@@ -6,6 +6,7 @@ import { auth } from '../lib/firebase';
 import Link from 'next/link';
 import AuthForm from './components/AuthForm';
 import LoadingSpinner from './components/LoadingSpinner';
+import Image from 'next/image';
 
 export default function HomePage() {
   const [user, loading] = useAuthState(auth);
@@ -246,7 +247,7 @@ export default function HomePage() {
           <div className="text-center">
             <div className="flex items-center justify-center space-x-2 mb-4">
               <div className="bg-blue-600 text-white p-2 rounded-lg">
-                <img src="/avenra.png" alt="Avenra logo" className="w-6 h-6 object-contain" />
+                <Image src="/avenra.png" alt="Avenra logo" width={24} height={24} className="object-contain" />
               </div>
               <span className="text-xl font-bold">Avenra AI</span>
             </div>

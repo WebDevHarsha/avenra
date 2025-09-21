@@ -18,6 +18,12 @@ export default function AnalyzePage() {
     extractedText?: string | null;
   } | null>(null);
   const router = useRouter();
+  // Keep hook calls unconditional and consistent across renders
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/auth');
+    }
+  }, [loading, user, router]);
 
   if (loading) {
     return (
@@ -26,11 +32,6 @@ export default function AnalyzePage() {
       </div>
     );
   }
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push('/auth');
-    }
-  }, [loading, user, router]);
 
   if (!user) {
     return null;
@@ -47,7 +48,6 @@ export default function AnalyzePage() {
 
   const handleNewAnalysis = () => {
     setAnalysisResult(null);
-    setIsAnalyzing(false);
   };
 
   return (
@@ -99,8 +99,4 @@ export default function AnalyzePage() {
       </div>
     </div>
   );
-}
-
-function setIsAnalyzing(arg0: boolean) {
-  throw new Error('Function not implemented.');
 }
