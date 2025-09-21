@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
@@ -9,7 +9,7 @@ import Link from 'next/link';
 
 export default function DashboardPage() {
   const [user, loading] = useAuthState(auth);
-  const [recentAnalyses, setRecentAnalyses] = useState([]);
+  const [recentAnalyses, _] = useState([]);
   const router = useRouter();
 
   if (loading) {

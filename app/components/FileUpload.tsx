@@ -17,7 +17,6 @@ export default function FileUpload({
   onFileRemove,
   selectedFile,
   isUploading = false,
-  accept = ['application/pdf', 'image/*']
 }: FileUploadProps) {
   const [dragActive, setDragActive] = useState(false);
 
@@ -44,7 +43,7 @@ export default function FileUpload({
     if (file.type === 'application/pdf') {
       return <FileText className="w-8 h-8 text-red-500" />;
     }
-    return <Image className="w-8 h-8 text-blue-500" />;
+    return <Image role="img" aria-label="Uploaded file preview" className="w-8 h-8 text-blue-500" />;
   };
 
   const formatFileSize = (bytes: number) => {

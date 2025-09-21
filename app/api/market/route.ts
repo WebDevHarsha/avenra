@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { analyzeWithGemini } from '../../../lib/gemini';
-import type { NewsAPIResponse, NewsArticle } from '../../../types';
+import type {  NewsArticle } from '../../../types';
 
 export async function POST(request: NextRequest) {
   try {
-    const { companyName, sector, keywords, country = 'us', pageSize = 10 } = await request.json();
+    const { companyName, sector, keywords, country = 'us' } = await request.json();
 
     if (!process.env.NEWS_API) {
       return NextResponse.json(
@@ -41,7 +41,7 @@ Optimized search query:`;
         console.log('Original company name:', companyName);
         console.log('Optimized search query:', searchQuery);
       } catch (error) {
-        console.warn('Failed to optimize search query with Gemini, using fallback');
+        console.warn('Failed to optimize search query with Gemini, using fallback'+error);
         // Fallback: extract first word before parentheses
         searchQuery = companyName.split('(')[0].trim();
       }

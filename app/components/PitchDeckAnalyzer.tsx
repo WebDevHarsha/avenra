@@ -153,7 +153,7 @@ export default function PitchDeckAnalyzer({ onAnalysisComplete }: PitchDeckAnaly
             await processPDF(typedArray, resolve);
           }
         } catch (error) {
-          resolve({ success: false, error: 'Failed to extract PDF text' });
+          resolve({ success: false, error: 'Failed to extract PDF text'+error });
         }
       };
       reader.onerror = () => resolve({ success: false, error: 'Failed to read file' });
@@ -188,7 +188,7 @@ export default function PitchDeckAnalyzer({ onAnalysisComplete }: PitchDeckAnaly
 
       resolve({ success: true, data: { text: fullText.trim(), metadata: { pages: pdf.numPages } } });
     } catch (error) {
-      resolve({ success: false, error: 'Failed to process PDF' });
+      resolve({ success: false, error: 'Failed to process PDF'+error });
     }
   };
 

@@ -25,11 +25,8 @@ export default function Navigation() {
           {/* Logo and Brand */}
           <div className="flex items-center">
             <Link href="/" className="flex items-center space-x-2">
-              <div className="bg-blue-600 text-white p-2 rounded-lg">
-                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
-                </svg>
-              </div>
+              <img src="/avenra.png" alt="Avenra logo" className="w-6 h-6 object-contain" />
+
               <span className="text-xl font-bold text-gray-900">Avenra AI</span>
             </Link>
           </div>

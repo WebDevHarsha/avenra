@@ -1,6 +1,4 @@
 'use client';
-
-import { formatCurrency, formatPercentage } from '../../lib/utils';
 import { CompanyKPIs } from '../../types';
 
 interface KPIDashboardProps {
