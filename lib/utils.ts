@@ -95,7 +95,7 @@ export async function parseKPIs(text: string): Promise<Partial<import('../types'
     
     // Use Gemini model with grounding capabilities
     const model = genAI.getGenerativeModel({ 
-      model: "gemini-1.5-flash",
+      model: "gemini-2.5-flash",
       tools: [{
         googleSearchRetrieval: {}
       }]

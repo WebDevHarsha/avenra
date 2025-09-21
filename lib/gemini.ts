@@ -23,7 +23,8 @@ export async function analyzeWithGemini(
 
     // ✅ Request
     const response = await ai.models.generateContent({
-      model: useGrounding ? "gemini-2.5-flash" : "gemini-1.5-flash",
+      // model: useGrounding ? "gemini-2.5-flash" : "gemini-1.5-flash",
+      model: "gemini-2.5-flash",
       contents: [{ role: "user", parts: [{ text: prompt }] }],
       config,
     });

@@ -1,7 +1,6 @@
 'use client';
 
 import { MarketData } from '../../types';
-import { formatCurrency, formatPercentage } from '../../lib/utils';
 
 interface MarketAnalysisProps {
   marketData: MarketData;

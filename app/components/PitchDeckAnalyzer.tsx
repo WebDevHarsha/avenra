@@ -26,7 +26,7 @@ export default function PitchDeckAnalyzer({ onAnalysisComplete }: PitchDeckAnaly
 
   const extractKPIs = async (text: string) => {
     try {
-      setCurrentStep('Extracting KPIs with Gemini AI...');
+      setCurrentStep('Extracting KPIs...');
       const response = await fetch('/api/kpis', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

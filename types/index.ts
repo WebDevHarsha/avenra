@@ -26,19 +26,28 @@ export interface PitchDeck {
 export interface CompanyKPIs {
   companyName: string;
   sector: string;
-  stage?: string;
+  fundingStage?: string;
   fundingRound?: string;
-  askAmount?: number;
-  valuation?: number;
-  revenue?: number;
-  growthRate?: number;
-  teamSize?: number;
-  marketSize?: number;
-  customerCount?: number;
-  burnRate?: number;
+  askAmount?: string;
+  valuation?: string;
+  revenue?: string;
+  growthRate?: string;
+  teamSize?: string;
+  marketSize?: string;       // always a string for display
+  customerCount?: string;
+  customers?: string;        // Alternative field name for customer data
+  burnRate?: string;
   businessModel?: string;
-  keyMetrics?: Record<string, any>;
+  keyMetrics?: string;       // stringified array
+  fundingRequest?: string;
+  useOfFunds?: string;
+  traction?: string;
+  technology?: string;
+  competition?: string;      // stringified array
+  geographicMarket?: string;
 }
+
+
 
 export interface AIAnalysis {
   id: string;
