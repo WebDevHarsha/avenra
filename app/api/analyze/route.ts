@@ -1,5 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { analyzeWithGemini, createAnalysisPrompt } from '../../../lib/gemini';
+import { 
+  calculateGrowthPotentialScore, 
+  calculateRiskScore, 
+  calculateInvestmentScore, 
+  calculateConfidenceScore,
+  calculateGrowthProjections,
+  generateRiskAssessment,
+  normalizeKPIData
+} from '../../../lib/utils';
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,51 +21,100 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // if (!process.env.NEXT_PUBLIC_GEMINI_API_KEY) {
-    //   return NextResponse.json(
-    //     { error: 'Gemini API key not configured' },
-    //     { status: 500 }
-    //   );
-    // }
+    console.log('Starting deterministic analysis with KPI data:', companyData);
 
-    // Create comprehensive analysis prompt
-    const analysisPrompt = createAnalysisPrompt(companyData, marketData, extractedText);
+    // Normalize KPI data to ensure consistency
+    const normalizedKpis = normalizeKPIData(companyData);
+    console.log('Normalized KPIs:', normalizedKpis);
 
-    // Get AI analysis from Gemini
-    const geminiResponse = await analyzeWithGemini(analysisPrompt);
+    // Generate deterministic scores based on normalized KPI data
+    const growthScore = calculateGrowthPotentialScore(normalizedKpis);
+    const riskScore = calculateRiskScore(normalizedKpis);
+    const investmentScore = calculateInvestmentScore(normalizedKpis);
+    const confidenceScore = calculateConfidenceScore(normalizedKpis);
+    const growthProjections = calculateGrowthProjections(normalizedKpis);
+    const riskAssessment = generateRiskAssessment(normalizedKpis);
 
-    // Parse the JSON response from Gemini
-    let analysisData;
+    // Generate qualitative insights using AI (but keep scores deterministic)
+    let qualitativeInsights;
     try {
-      // Extract JSON from the response (in case there's extra text)
+      const analysisPrompt = createAnalysisPrompt(companyData, marketData, extractedText);
+      const geminiResponse = await analyzeWithGemini(analysisPrompt);
+      
       const jsonMatch = geminiResponse.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
-        analysisData = JSON.parse(jsonMatch[0]);
+        qualitativeInsights = JSON.parse(jsonMatch[0]);
       } else {
-        throw new Error('No JSON found in response');
+        throw new Error('No JSON found in AI response');
       }
     } catch (parseError) {
-      console.error('Failed to parse Gemini response:', parseError);
-      // Fallback: create a basic analysis structure
-      analysisData = createFallbackAnalysis(extractedText, companyData);
+      console.error('Failed to get AI insights, using fallback:', parseError);
+      qualitativeInsights = createFallbackAnalysis(extractedText, companyData);
     }
 
-    // Validate and sanitize the analysis data
-    const sanitizedAnalysis = sanitizeAnalysisData(analysisData);
+    // Combine deterministic scores with AI-generated qualitative insights
+    const deterministicAnalysis = {
+      growthPotential: {
+        score: growthScore, // Deterministic
+        factors: qualitativeInsights.growthPotential?.factors || [
+          'Market opportunity', 'Business model strength', 'Traction metrics'
+        ],
+        projectedGrowth: growthProjections, // Deterministic
+        keyDrivers: qualitativeInsights.growthPotential?.keyDrivers || [
+          'Product innovation', 'Market expansion', 'Customer acquisition'
+        ]
+      },
+      riskAssessment: {
+        ...riskAssessment, // Deterministic overall structure
+        redFlags: qualitativeInsights.riskAssessment?.redFlags || [
+          'Market competition', 'Execution risk'
+        ],
+        mitigationStrategies: qualitativeInsights.riskAssessment?.mitigationStrategies || [
+          'Strengthen competitive moat', 'Focus on product-market fit'
+        ]
+      },
+      marketAnalysis: qualitativeInsights.marketAnalysis || {
+        marketTrends: ['Digital transformation', 'Market expansion'],
+        competitivePosition: 'Emerging player with differentiated approach',
+        marketSize: 1000000000,
+        growthRate: 15,
+        opportunities: ['Market expansion', 'Product diversification'],
+        threats: ['Increased competition', 'Economic uncertainty']
+      },
+      recommendations: qualitativeInsights.recommendations || [
+        {
+          type: 'growth',
+          priority: 'High',
+          title: 'Accelerate Product Development',
+          description: 'Focus on core product features to establish market position',
+          expectedImpact: 'Improved market competitiveness',
+          timeline: '6-12 months'
+        }
+      ],
+      overallScore: investmentScore, // Deterministic
+      confidence: confidenceScore // Deterministic
+    };
+
+    console.log('Generated deterministic scores:', {
+      growthScore,
+      riskScore,
+      investmentScore,
+      confidenceScore
+    });
 
     return NextResponse.json({
       success: true,
       data: {
-        ...sanitizedAnalysis,
+        ...deterministicAnalysis,
         timestamp: new Date().toISOString(),
         id: generateAnalysisId(),
       },
     });
 
   } catch (error) {
-    console.error('Gemini analysis error:', error);
+    console.error('Analysis error:', error);
     return NextResponse.json(
-      { error: 'Failed to analyze with AI', details: error instanceof Error ? error.message : 'Unknown error' },
+      { error: 'Failed to analyze', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }
