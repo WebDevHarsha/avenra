@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-const NewsAPI = require('newsapi');
-
-const newsapi = new NewsAPI(process.env.NEWS_API);
+import { analyzeWithGemini } from '../../../lib/gemini';
 
 export async function POST(request: NextRequest) {
   try {
-    const { sector, keywords, country = 'us', pageSize = 10 } = await request.json();
+    const { companyName, sector, keywords, country = 'us', pageSize = 10 } = await request.json();
 
     if (!process.env.NEWS_API) {
       return NextResponse.json(
@@ -14,39 +12,75 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Build search query
+    // Build search query - prioritize company name if provided
     let searchQuery = '';
-    if (sector) {
-      searchQuery += sector;
-    }
-    if (keywords && keywords.length > 0) {
-      if (searchQuery) searchQuery += ' AND ';
-      searchQuery += keywords.join(' OR ');
-    }
+    if (companyName) {
+      // Use Gemini to optimize the search query for news APIs
+      const optimizationPrompt = `
+Given this company name: "${companyName}"
+And this sector: "${sector || 'not specified'}"
 
-    // If no specific search terms, use general business/startup terms
-    if (!searchQuery) {
-      searchQuery = 'startup OR investment OR funding OR venture capital';
-    }
+Create an optimized search query for NewsAPI that will find relevant recent news articles SPECIFICALLY about this company. 
 
-    // Get current news using direct API call
-    const fromDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-    const newsUrl = `https://newsapi.org/v2/everything?q=${encodeURIComponent(searchQuery)}&language=en&sortBy=publishedAt&pageSize=${pageSize}&from=${fromDate}&apiKey=${process.env.NEWS_API}`;
+Rules:
+1. Extract the main company brand name (e.g., "Airbnb (originally AirBed&Breakfast)" should become "Airbnb")
+2. Remove parentheses, extra descriptions, and complex text
+3. Add relevant business terms to make it more specific (like "earnings" OR "revenue" OR "announces" OR "reports")
+4. Focus on news that would be ABOUT the company, not just mentioning it
+5. Format: "CompanyName AND (business term OR business term OR business term)"
+6. Return ONLY the optimized search query, nothing else
+
+Example: "Tesla AND (earnings OR revenue OR stock OR announces OR reports OR quarterly)"
+
+Optimized search query:`;
+
+      try {
+        const optimizedQuery = await analyzeWithGemini(optimizationPrompt, false);
+        searchQuery = optimizedQuery.trim().replace(/['"]/g, ''); // Remove quotes if present
+        console.log('Original company name:', companyName);
+        console.log('Optimized search query:', searchQuery);
+      } catch (error) {
+        console.warn('Failed to optimize search query with Gemini, using fallback');
+        // Fallback: extract first word before parentheses
+        searchQuery = companyName.split('(')[0].trim();
+      }
+    } else {
+      // Fallback to original logic if no company name provided
+      if (sector) searchQuery += sector;
+      if (keywords && keywords.length > 0) {
+        if (searchQuery) searchQuery += ' AND ';
+        searchQuery += keywords.join(' OR ');
+      }
+      if (!searchQuery) searchQuery = 'startup OR investment OR funding OR venture capital';
+    }
+    // Get news from NewsAPI - search for last 20 days
+    const fromDate = new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    const newsUrl = `https://newsapi.org/v2/everything?q=${encodeURIComponent(searchQuery)}&from=${fromDate}&sortBy=popularity&apiKey=${process.env.NEWS_API}`;
+    
+    console.log('News API URL:', newsUrl.replace(process.env.NEWS_API || '', 'API_KEY_HIDDEN'));
+    console.log('Search query:', searchQuery);
+    console.log('From date:', fromDate);
     
     const newsResponse = await fetch(newsUrl);
     const newsData = await newsResponse.json();
+    
+    console.log('NewsAPI response status:', newsResponse.status);
+    // console.log('NewsAPI total results:', newsData.totalResults);
+    if (newsData.articles) {
+      console.log('First few article titles:', newsData.articles.slice(0, 3).map((a: any) => a.title));
+    }
 
     if (!newsResponse.ok || newsData.status === 'error') {
       console.warn('News API error:', newsData.message || 'Unknown error');
-      // Return fallback data if News API fails
       return NextResponse.json({ 
         success: true, 
         data: {
-          articles: [],
-          news: [],
+          newsArticles: [],
+          headlines: [],
           marketData: {
             totalResults: 0,
             searchQuery,
+            companyName,
             sector: sector || 'General',
             lastUpdated: new Date().toISOString()
           }
@@ -66,33 +100,44 @@ export async function POST(request: NextRequest) {
       url: article.url,
       publishedAt: article.publishedAt,
       source: article.source.name,
-      relevanceScore: calculateRelevanceScore(article, sector, keywords),
+      relevanceScore: calculateRelevanceScore(article, companyName, sector, keywords),
     }));
 
-    // Sort by relevance score
-    processedArticles.sort((a: any, b: any) => b.relevanceScore - a.relevanceScore);
+    // Filter and sort by relevance score - only keep highly relevant articles
+    const filteredArticles = processedArticles.filter((article: any) => article.relevanceScore >= 40);
+    filteredArticles.sort((a: any, b: any) => b.relevanceScore - a.relevanceScore);
 
-    // Analyze market sentiment from headlines
+    console.log('Processed articles count:', processedArticles.length);
+    console.log('Filtered articles count:', filteredArticles.length);
+    console.log('Top article scores:', filteredArticles.slice(0, 5).map((a: any) => ({ title: a.title.slice(0, 50) + '...', score: a.relevanceScore })));
+
+    // Analyze market sentiment from headlines and relevant company articles
     const marketSentiment = analyzeMarketSentiment([
-      ...(headlinesData.articles || []),
-      ...(newsData.articles?.slice(0, 10) || [])
+      ...(filteredArticles.slice(0, 10) || []), // Prioritize company-specific articles
+      ...(headlinesData.articles || [])
     ]);
 
-    // Extract market trends from articles
-    const marketTrends = extractMarketTrends(processedArticles, sector);
+    // Extract market trends
+    const marketTrends = extractMarketTrends(filteredArticles, sector);
 
-    return NextResponse.json({
+    const result = {
       success: true,
       data: {
-        articles: processedArticles,
+        newsArticles: filteredArticles,
         headlines: headlinesData.articles || [],
         marketSentiment,
         marketTrends,
+        companyName,
         sector,
         fetchedAt: new Date().toISOString(),
         totalResults: newsData.totalResults || 0,
       },
-    });
+    };
+
+    // Print result to console
+    console.log('✅ Market Data Result:', JSON.stringify(result, null, 2));
+
+    return NextResponse.json(result);
 
   } catch (error) {
     console.error('News API error:', error);
@@ -103,33 +148,60 @@ export async function POST(request: NextRequest) {
   }
 }
 
-function calculateRelevanceScore(article: any, sector?: string, keywords?: string[]): number {
+function calculateRelevanceScore(article: any, companyName?: string, sector?: string, keywords?: string[]): number {
   let score = 0;
-  const content = `${article.title} ${article.description}`.toLowerCase();
+  const title = (article.title || '').toLowerCase();
+  const description = (article.description || '').toLowerCase();
+  const content = `${title} ${description}`;
 
-  // Sector relevance
-  if (sector && content.includes(sector.toLowerCase())) {
-    score += 30;
-  }
+  if (!companyName) return 0;
 
-  // Keywords relevance
-  if (keywords) {
-    keywords.forEach(keyword => {
-      if (content.includes(keyword.toLowerCase())) {
-        score += 20;
-      }
-    });
-  }
-
-  // Business/investment terms
-  const businessTerms = ['funding', 'investment', 'startup', 'venture', 'ipo', 'acquisition', 'growth'];
-  businessTerms.forEach(term => {
-    if (content.includes(term)) {
-      score += 10;
+  const cleanCompanyName = companyName.split('(')[0].trim().toLowerCase();
+  const companyWords = cleanCompanyName.split(' ').filter(word => word.length > 2);
+  
+  // Very strict scoring - require company name to be prominently mentioned
+  let companyMentions = 0;
+  let titleMention = false;
+  
+  companyWords.forEach(word => {
+    if (title.includes(word)) {
+      score += 40;
+      titleMention = true;
+      companyMentions++;
+    } else if (description.includes(word)) {
+      score += 20;
+      companyMentions++;
     }
   });
 
-  return Math.min(score, 100);
+  // Require at least the main company word to be mentioned
+  if (companyMentions === 0) return 0;
+
+  // Bonus for title mention - articles about the company should mention it in title
+  if (titleMention) score += 30;
+
+  // Bonus for multiple company word matches (for multi-word company names)
+  if (companyWords.length > 1 && companyMentions >= companyWords.length) {
+    score += 20;
+  }
+
+  // Business context bonus (but only if company is already mentioned)
+  const businessTerms = ['earnings', 'revenue', 'profit', 'quarterly', 'stock', 'shares', 'ceo', 'announces', 'reports', 'financial'];
+  let businessContext = 0;
+  businessTerms.forEach(term => {
+    if (content.includes(term)) businessContext += 5;
+  });
+  score += Math.min(businessContext, 25);
+
+  // Penalty for very generic mentions
+  const genericTerms = ['like', 'similar to', 'such as', 'including', 'among others'];
+  genericTerms.forEach(term => {
+    if (content.includes(term + ' ' + cleanCompanyName) || content.includes(cleanCompanyName + ' and')) {
+      score -= 20;
+    }
+  });
+
+  return Math.max(0, Math.min(score, 100));
 }
 
 function analyzeMarketSentiment(articles: any[]): 'Positive' | 'Neutral' | 'Negative' {
@@ -141,14 +213,8 @@ function analyzeMarketSentiment(articles: any[]): 'Positive' | 'Neutral' | 'Nega
 
   articles.forEach(article => {
     const content = `${article.title} ${article.description}`.toLowerCase();
-    
-    positiveWords.forEach(word => {
-      if (content.includes(word)) positiveCount++;
-    });
-    
-    negativeWords.forEach(word => {
-      if (content.includes(word)) negativeCount++;
-    });
+    positiveWords.forEach(word => { if (content.includes(word)) positiveCount++; });
+    negativeWords.forEach(word => { if (content.includes(word)) negativeCount++; });
   });
 
   if (positiveCount > negativeCount * 1.2) return 'Positive';
@@ -167,7 +233,6 @@ function extractMarketTrends(articles: any[], sector?: string): string[] {
   
   articles.slice(0, 20).forEach(article => {
     const content = `${article.title} ${article.description}`.toLowerCase();
-    
     trendKeywords.forEach(keyword => {
       if (content.includes(keyword.toLowerCase())) {
         trendCounts[keyword] = (trendCounts[keyword] || 0) + 1;
@@ -175,7 +240,6 @@ function extractMarketTrends(articles: any[], sector?: string): string[] {
     });
   });
 
-  // Return top trends
   return Object.entries(trendCounts)
     .sort(([,a], [,b]) => b - a)
     .slice(0, 5)

@@ -180,11 +180,10 @@ export default function PitchDeckAnalyzer({ onAnalysisComplete }: PitchDeckAnaly
   };
 
   const fetchMarketData = async (sector?: string, companyName?: string) => {
-    const keywords = [sector, companyName].filter(Boolean);
     const response = await fetch('/api/market', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sector, keywords, pageSize: 15 }),
+      body: JSON.stringify({ companyName, sector, pageSize: 15 }),
     });
 
     if (!response.ok) return null;
