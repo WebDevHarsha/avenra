@@ -80,6 +80,20 @@ export default function HomePage() {
               )}
             </div>
           </div>
+
+          <div className="mt-12 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="relative" style={{ paddingTop: '56.25%' }}>
+              <iframe
+                className="absolute inset-0 w-full h-full rounded-lg shadow-lg"
+                src="https://www.youtube.com/embed/MToFThyDh98"
+                title="Avenra demo"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+              ></iframe>
+            </div>
+            
+          </div>
         </div>
       </section>
 
